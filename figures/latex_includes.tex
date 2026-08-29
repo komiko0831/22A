@@ -1,0 +1,43 @@
+% =====================================================================
+% 波浪能最大输出功率设计 —— 图表 LaTeX 引用片段
+% 用法：\usepackage{float} \usepackage{booktabs} \usepackage{graphicx}
+% 在正文中 \input{figures/latex_includes.tex}
+% =====================================================================
+
+% ---- 图 1：浮子与振子垂荡位移时程 ----
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/fig_1_heave_displacement.pdf}
+    \caption{浮子与振子垂荡位移时程（前 40 个波浪周期，线性阻尼）}
+    \label{fig:heave_displacement}
+\end{figure}
+
+% ---- 图 2：浮子与振子垂荡速度时程 ----
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/fig_2_heave_velocity.pdf}
+    \caption{浮子与振子垂荡速度时程（前 40 个波浪周期，线性阻尼）}
+    \label{fig:heave_velocity}
+\end{figure}
+
+% ---- 图 3：相对位移与相对速度时程 ----
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/fig_3_relative_motion.pdf}
+    \caption{浮子与振子相对位移及相对速度时程（线性与非线性阻尼对比）}
+    \label{fig:relative_motion}
+\end{figure}
+
+% ---- 图 4：PTO 瞬时功率曲线 ----
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/fig_4_pto_power.pdf}
+    \caption{PTO 瞬时输出功率曲线（线性与非线性阻尼对比）}
+    \label{fig:pto_power}
+\end{figure}
+
+% ---- 表 1：优化结果汇总 ----
+\input{figures/TABLE_summary.tex}
+
+% ---- 表 2：问题1 指定时刻快照 ----
+\input{figures/TABLE_snapshot.tex}
