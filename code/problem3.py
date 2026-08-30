@@ -13,13 +13,17 @@ import numpy as np
 import openpyxl
 
 from utils import (load_attach3, make_coupled_rhs, solve_rhs,
-                   wave_period, save_json)
+                   reorder_coupled_state, wave_period, save_json)
 
 FIG_DIR = os.path.join(os.path.dirname(__file__), '..', 'figures')
 
 
 def _write_xlsx(t, Y, path):
-    """写 result3.xlsx：8 列状态（浮子/振子 × 垂荡位移/速度/纵摇角/角速度）。"""
+    """写 result3.xlsx：8 列状态（浮子/振子 × 垂荡位移/速度/纵摇角/角速度）。
+
+    期望 Y 已重排为输出列序 [z1, vz1, θ1, ωθ1, z2, vz2, θ2, ωθ2]，
+    与下列表头一一对应。
+    """
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(['时间(s)',
@@ -47,7 +51,9 @@ def main():
     y0 = np.zeros(8)                    # 静平衡初始
     t, Y = solve_rhs(rhs, y0, t_end, dt=dt)
 
-    # 状态布局: [z1, z2, θ1, θ2, vz1, vz2, ωθ1, ωθ2]
+    # 内部积分序 [z1, z2, θ1, θ2, vz1, vz2, ωθ1, ωθ2] →
+    # 输出列序    [z1, vz1, θ1, ωθ1, z2, vz2, θ2, ωθ2]（与 xlsx 表头一致）
+    Y = reorder_coupled_state(Y)
     _write_xlsx(t, Y, os.path.join(FIG_DIR, 'result3.xlsx'))
 
     # 论文要求的指定时刻快照
@@ -56,20 +62,20 @@ def main():
     for tt in snap_times:
         idx = int(round(tt / dt))
         snapshots[str(tt)] = dict(
-            浮子垂荡位移_m=float(Y[idx, 0]), 浮子垂荡速度_ms=float(Y[idx, 4]),
-            浮子纵摇角_rad=float(Y[idx, 2]), 浮子纵摇角速度_rads=float(Y[idx, 6]),
-            振子垂荡位移_m=float(Y[idx, 1]), 振子垂荡速度_ms=float(Y[idx, 5]),
-            振子纵摇角_rad=float(Y[idx, 3]), 振子纵摇角速度_rads=float(Y[idx, 7]))
+            浮子垂荡位移_m=float(Y[idx, 0]), 浮子垂荡速度_ms=float(Y[idx, 1]),
+            浮子纵摇角_rad=float(Y[idx, 2]), 浮子纵摇角速度_rads=float(Y[idx, 3]),
+            振子垂荡位移_m=float(Y[idx, 4]), 振子垂荡速度_ms=float(Y[idx, 5]),
+            振子纵摇角_rad=float(Y[idx, 6]), 振子纵摇角速度_rads=float(Y[idx, 7]))
 
     results = dict(
         omega=omega, T=T, Cz=Cz, Cth=Cth,
         meta=dict(ma=ma, Ja=Ja, Bz=Bz, Bth=Bth, f=f, L=L),
         snapshots=snapshots,
         t=list(t),
-        z1=list(Y[:, 0]), z2=list(Y[:, 1]),
-        theta1=list(Y[:, 2]), theta2=list(Y[:, 3]),
-        vz1=list(Y[:, 4]), vz2=list(Y[:, 5]),
-        wtheta1=list(Y[:, 6]), wtheta2=list(Y[:, 7]),
+        z1=list(Y[:, 0]), vz1=list(Y[:, 1]),
+        theta1=list(Y[:, 2]), wtheta1=list(Y[:, 3]),
+        z2=list(Y[:, 4]), vz2=list(Y[:, 5]),
+        theta2=list(Y[:, 6]), wtheta2=list(Y[:, 7]),
     )
     save_json(results, os.path.join(FIG_DIR, 'problem_3_results.json'))
 

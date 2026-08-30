@@ -90,17 +90,22 @@ def _float_inertia():
 
 
 def _osc_inertia():
-    """振子绕隔层转轴的纵摇转动惯量 J2（平行轴定理）。"""
-    x_eq = M2 * G / K_Z                    # 静平衡弹簧伸长量 ≈ 0.298 m
-    l_eq = H2 / 2 + x_eq + 0.5             # 振子质心到转轴距离（弹簧原长0.5m）
-    l_eq = 0.7980                          # 建模思路给定静平衡距离
+    """振子绕隔层转轴的纵摇转动惯量 J2（平行轴定理）。
+
+    振子位于转轴（隔层中心）上方，其重力使直线弹簧受压，静平衡时：
+      弹簧长度 l_spring = l0 - x_eq = 0.5 - m2*g/k_z ≈ 0.202 m
+      振子质心到转轴距离 l_eq = l_spring + h2/2 ≈ 0.452 m
+    """
+    x_eq = M2 * G / K_Z                    # 弹簧静压缩量 ≈ 0.298 m
+    l_spring = 0.5 - x_eq                  # 静平衡弹簧长度 ≈ 0.202 m
+    l_eq = l_spring + H2 / 2               # 振子质心到转轴距离 ≈ 0.452 m
     J_center = M2 / 12 * (3 * R2 ** 2 + H2 ** 2)
     return J_center + M2 * l_eq ** 2
 
 
 J1 = _float_inertia()          # ≈ 14340.7 kg·m^2
-J2 = _osc_inertia()            # ≈ 1752.3  kg·m^2
-X_EQ = M2 * G / K_Z            # 振子静平衡伸长量 ≈ 0.2980 m
+J2 = _osc_inertia()            # ≈ 699.8   kg·m^2
+X_EQ = M2 * G / K_Z            # 弹簧静压缩量 ≈ 0.2980 m（振子在上方，弹簧受压）
 
 
 # ============================= 矩阵构建 =============================
@@ -131,6 +136,22 @@ def coupled_matrices(ma, Ja, Bz, Bth, Cz, Cth):
         [0.0, 0.0, -K_THETA, K_THETA],
     ])
     return M, Cd, K
+
+
+# 四自由度状态输出列序（与 result3.xlsx 表头一致）：
+#   垂荡位移、垂荡速度、纵摇角、纵摇角速度（先浮子、后振子）
+#   即 [z1, vz1, θ1, ωθ1, z2, vz2, θ2, ωθ2]。
+# 内部积分状态序为 [z1, z2, θ1, θ2, vz1, vz2, ωθ1, ωθ2]，故重排索引为：
+COUPLED_OUTPUT_INDEX = [0, 4, 2, 6, 1, 5, 3, 7]
+
+
+def reorder_coupled_state(Y):
+    """将四自由度积分状态重排为输出列序。
+
+    输入 Y: (N, 8)，内部序 [z1, z2, θ1, θ2, vz1, vz2, ωθ1, ωθ2]
+    输出  : (N, 8)，输出序 [z1, vz1, θ1, ωθ1, z2, vz2, θ2, ωθ2]
+    """
+    return Y[:, COUPLED_OUTPUT_INDEX]
 
 
 # ============================= 动力学右端函数 =============================
@@ -271,7 +292,7 @@ if __name__ == '__main__':
     print(f"垂荡静水恢复系数 C_h  = {C_H:.4f} N/m")
     print(f"浮子纵摇转动惯量 J1    = {J1:.4f} kg·m^2")
     print(f"振子纵摇转动惯量 J2    = {J2:.4f} kg·m^2")
-    print(f"振子静平衡伸长量 x_eq  = {X_EQ:.4f} m")
+    print(f"振子静平衡压缩量 x_eq  = {X_EQ:.4f} m")
     print(f"吃水深度（静平衡）     = {np.cbrt((M1 + M2) * G / (RHO * G * np.pi * R1 ** 2)) if False else '见建模思路 ≈ 2.80 m'}")
     a3 = load_attach3()
     print("附件3 加载:", {k: v['omega'] for k, v in a3.items()})
